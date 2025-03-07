@@ -5,9 +5,10 @@
 </template>
 
 <script>
-import NoticiasPage from "./components/Noticias.vue";
+import NoticiasPage from "./components/NoticiasPage.vue";
 
 export default {
+  name: "App",
   components: {
     NoticiasPage,
   },
@@ -15,10 +16,19 @@ export default {
 </script>
 
 <style>
+/* Estilos globais */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #062a02; /* Fundo verde para cobrir espaços em branco */
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  width: 100%;
+  height: 100%;
+  background-color: #062a02; /* Fundo verde para cobrir espaços em branco */
 }
 </style>
