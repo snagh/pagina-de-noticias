@@ -1,8 +1,9 @@
 <template>
   <div class="noticias">
     <!-- Seção: Últimas Notícias do Brasil -->
-    <h1 class="titulo-secao">Últimas Notícias do Brasil</h1>
+    <h1 id="noticias-brasil" class="titulo-secao">Notícias do Brasil</h1>
     <div v-if="carregando">Carregando notícias...</div>
+    <div v-else-if="erro" class="erro">{{ erro }}</div>
     <div v-else>
       <div class="grid-noticias">
         <a
@@ -36,8 +37,9 @@
     </div>
 
     <!-- Seção: Resto do Mundo -->
-    <h1 class="titulo-secao">Resto do Mundo</h1>
+    <h1 id="noticias-mundo" class="titulo-secao">No Mundo</h1>
     <div v-if="carregando">Carregando notícias...</div>
+    <div v-else-if="erro" class="erro">{{ erro }}</div>
     <div v-else>
       <div class="grid-noticias">
         <a
@@ -158,43 +160,46 @@ export default {
 .noticias {
   font-family: Arial, sans-serif;
   padding: 20px;
-  background-color: #062a02; /* Verde escuro */
-  color: #e0f0e0; /* Cor do texto para contrastar com o fundo */
-  min-height: 100vh; /* Ocupa pelo menos 100% da altura da tela */
-  box-sizing: border-box; /* Garante que o padding não aumente o tamanho total */
-  width: 100%; /* Garante que o contêiner ocupe toda a largura */
+  background-color: #f2f2f2;
+  color: #2c3e50;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .titulo-secao {
   font-family: "Arial Black", sans-serif;
   font-size: 2.5em;
   text-align: center;
-  color: #42b983; /* Verde claro para o título */
+  color: #f22259;
   margin: 40px 0 20px;
-  width: 20%; /* Ocupa 1/5 da tela */
-  margin-left: auto;
-  margin-right: auto;
+  white-space: nowrap; /* Impede a quebra de linha por padrão */
+  overflow: hidden; /* Esconde o texto que ultrapassar */
+  text-overflow: ellipsis; /* Adiciona "..." se o texto for muito longo */
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .grid-noticias {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Quatro colunas por padrão */
-  gap: 20px; /* Espaçamento entre os blocos */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   padding: 20px;
-  margin: 0; /* Remove margens padrão */
+  margin: 0;
 }
 
 .bloco-noticia {
-  background-color: #e0f0e0; /* Cor dos blocos */
+  background-color: #eaeaea;
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  overflow: hidden; /* Garante que o conteúdo não ultrapasse o bloco */
-  text-decoration: none; /* Remove sublinhado do link */
-  color: inherit; /* Herda a cor do texto do bloco */
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
 }
 
 .bloco-noticia:hover {
@@ -211,8 +216,8 @@ export default {
 
 .bloco-noticia img {
   width: 100%;
-  max-height: 150px; /* Altura máxima para a imagem */
-  object-fit: cover; /* Garante que a imagem cubra o espaço sem distorcer */
+  max-height: 150px;
+  object-fit: cover;
   border-radius: 8px;
   margin-bottom: 10px;
 }
@@ -220,22 +225,22 @@ export default {
 .bloco-noticia p {
   color: #2c3e50;
   font-size: 0.9em;
-  flex-grow: 1; /* Faz o parágrafo ocupar o espaço restante */
+  flex-grow: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* Limita o texto a 3 linhas (WebKit) */
-  line-clamp: 3; /* Limita o texto a 3 linhas (padrão CSS) */
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
-  margin-bottom: 10px; /* Espaço entre o parágrafo e o "Leia mais" */
+  margin-bottom: 10px;
 }
 
 .bloco-noticia span {
-  color: #42b983; /* Cor do texto "Leia mais" */
+  color: #f25c84;
   font-weight: bold;
   text-align: center;
-  display: block; /* Faz o "Leia mais" ocupar uma linha própria */
-  margin-top: auto; /* Garante que o "Leia mais" fique no final */
+  display: block;
+  margin-top: auto;
 }
 
 .paginacao {
@@ -243,10 +248,11 @@ export default {
   justify-content: center;
   align-items: center;
   margin-top: 20px;
+  padding-bottom: 80px; /* Espaço extra para o botão flutuante */
 }
 
 button {
-  background-color: #42b983;
+  background-color: #3dc87e;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -260,35 +266,43 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.erro {
+  color: red;
+  text-align: center;
+  margin-top: 20px;
+}
+
 /* Responsividade */
 @media (max-width: 1200px) {
   .grid-noticias {
-    grid-template-columns: repeat(3, 1fr); /* Três colunas para telas médias */
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .titulo-secao {
-    width: 30%; /* Ajusta a largura do título */
+    width: 30%;
   }
 }
 
 @media (max-width: 900px) {
   .grid-noticias {
-    grid-template-columns: repeat(2, 1fr); /* Duas colunas para tablets */
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .titulo-secao {
-    width: 50%; /* Ajusta a largura do título */
+    width: 50%;
   }
 }
 
 @media (max-width: 600px) {
   .grid-noticias {
-    grid-template-columns: 1fr; /* Uma coluna para celulares */
+    grid-template-columns: 1fr;
   }
 
   .titulo-secao {
-    width: 80%; /* Aumenta a largura do título em telas pequenas */
+    width: 80%;
     font-size: 2em;
+    white-space: normal; /* Permite a quebra de linha em celulares */
+    text-overflow: clip; /* Remove o "..." em celulares */
   }
 }
 </style>
