@@ -8,14 +8,20 @@
       <div class="grid-noticias">
         <a
           v-for="noticia in noticiasBrasilPaginaAtual"
-          :key="noticia.url"
-          :href="noticia.url"
+          :key="noticia.id"
+          :href="noticia.webUrl"
           target="_blank"
           class="bloco-noticia"
         >
-          <h2>{{ noticia.title }}</h2>
-          <img v-if="noticia.image" :src="noticia.image" :alt="noticia.title" />
-          <p>{{ noticia.description }}</p>
+          <h2>{{ noticia.webTitle }}</h2>
+          <img
+            v-if="noticia.fields && noticia.fields.thumbnail"
+            :src="noticia.fields.thumbnail"
+            :alt="noticia.webTitle"
+          />
+          <p v-if="noticia.fields && noticia.fields.trailText">
+            {{ noticia.fields.trailText }}
+          </p>
           <span>Leia mais</span>
         </a>
       </div>
@@ -44,14 +50,20 @@
       <div class="grid-noticias">
         <a
           v-for="noticia in noticiasMundoPaginaAtual"
-          :key="noticia.url"
-          :href="noticia.url"
+          :key="noticia.id"
+          :href="noticia.webUrl"
           target="_blank"
           class="bloco-noticia"
         >
-          <h2>{{ noticia.title }}</h2>
-          <img v-if="noticia.image" :src="noticia.image" :alt="noticia.title" />
-          <p>{{ noticia.description }}</p>
+          <h2>{{ noticia.webTitle }}</h2>
+          <img
+            v-if="noticia.fields && noticia.fields.thumbnail"
+            :src="noticia.fields.thumbnail"
+            :alt="noticia.webTitle"
+          />
+          <p v-if="noticia.fields && noticia.fields.trailText">
+            {{ noticia.fields.trailText }}
+          </p>
           <span>Leia mais</span>
         </a>
       </div>
@@ -78,76 +90,110 @@ export default {
   name: "NoticiasPage",
   data() {
     return {
-      noticiasBrasil: [], // Notícias do Brasil
-      noticiasMundo: [], // Notícias do resto do mundo
+      noticiasBrasil: [],
+      noticiasMundo: [],
       carregando: true,
       erro: null,
-      paginaAtualBrasil: 1, // Paginação para notícias do Brasil
-      paginaAtualMundo: 1, // Paginação para notícias do mundo
-      noticiasPorPagina: 8, // 8 notícias por página (4 colunas x 2 linhas)
+      paginaAtualBrasil: 1,
+      paginaAtualMundo: 1,
+      noticiasPorPagina: 8,
     };
   },
   computed: {
-    // Notícias do Brasil na página atual
     noticiasBrasilPaginaAtual() {
       const inicio = (this.paginaAtualBrasil - 1) * this.noticiasPorPagina;
       const fim = inicio + this.noticiasPorPagina;
       return this.noticiasBrasil.slice(inicio, fim);
     },
-    // Total de páginas para notícias do Brasil
     totalPaginasBrasil() {
       return Math.ceil(this.noticiasBrasil.length / this.noticiasPorPagina);
     },
-    // Notícias do mundo na página atual
     noticiasMundoPaginaAtual() {
       const inicio = (this.paginaAtualMundo - 1) * this.noticiasPorPagina;
       const fim = inicio + this.noticiasPorPagina;
       return this.noticiasMundo.slice(inicio, fim);
     },
-    // Total de páginas para notícias do mundo
     totalPaginasMundo() {
       return Math.ceil(this.noticiasMundo.length / this.noticiasPorPagina);
     },
   },
   methods: {
-    // Paginação para notícias do Brasil
     paginaAnteriorBrasil() {
       if (this.paginaAtualBrasil > 1) {
         this.paginaAtualBrasil--;
+        this.$nextTick(() => {
+          this.rolarParaSecao("noticias-brasil");
+        });
       }
     },
     proximaPaginaBrasil() {
       if (this.paginaAtualBrasil < this.totalPaginasBrasil) {
         this.paginaAtualBrasil++;
+        this.$nextTick(() => {
+          this.rolarParaSecao("noticias-brasil");
+        });
       }
     },
-    // Paginação para notícias do mundo
     paginaAnteriorMundo() {
       if (this.paginaAtualMundo > 1) {
         this.paginaAtualMundo--;
+        this.$nextTick(() => {
+          this.rolarParaSecao("noticias-mundo");
+        });
       }
     },
     proximaPaginaMundo() {
       if (this.paginaAtualMundo < this.totalPaginasMundo) {
         this.paginaAtualMundo++;
+        this.$nextTick(() => {
+          this.rolarParaSecao("noticias-mundo");
+        });
+      }
+    },
+    rolarParaSecao(id) {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        const offset = 60; // Altura da barra superior
+        const posicao = elemento.offsetTop - offset;
+        window.scrollTo({
+          top: posicao,
+          behavior: "smooth",
+        });
       }
     },
   },
   async created() {
     try {
-      const apiKey = process.env.VUE_APP_NEWS_API_KEY;
-      const urlBrasil = `https://gnews.io/api/v4/top-headlines?country=br&token=${apiKey}`;
-      const urlMundo = `https://gnews.io/api/v4/top-headlines?token=${apiKey}`;
+      const apiKey = process.env.VUE_APP_GUARDIAN_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "Chave da API do The Guardian não encontrada. Verifique o arquivo .env."
+        );
+      }
 
-      // Busca notícias do Brasil
-      const responseBrasil = await axios.get(urlBrasil);
-      this.noticiasBrasil = responseBrasil.data.articles;
+      // URL para notícias do Brasil
+      const urlBrasil = `https://content.guardianapis.com/search?q=brazil&api-key=${apiKey}&show-fields=thumbnail,trailText`;
+      // URL para notícias do mundo
+      const urlMundo = `https://content.guardianapis.com/search?api-key=${apiKey}&show-fields=thumbnail,trailText`;
 
-      // Busca notícias do mundo
-      const responseMundo = await axios.get(urlMundo);
-      this.noticiasMundo = responseMundo.data.articles;
+      const [responseBrasil, responseMundo] = await Promise.all([
+        axios.get(urlBrasil),
+        axios.get(urlMundo),
+      ]);
+
+      if (responseBrasil.data && responseBrasil.data.response.results) {
+        this.noticiasBrasil = responseBrasil.data.response.results;
+      } else {
+        throw new Error("Resposta da API do Brasil inválida.");
+      }
+
+      if (responseMundo.data && responseMundo.data.response.results) {
+        this.noticiasMundo = responseMundo.data.response.results;
+      } else {
+        throw new Error("Resposta da API do Mundo inválida.");
+      }
     } catch (error) {
-      this.erro = "Erro ao carregar notícias. Tente novamente mais tarde.";
+      this.erro = `Erro ao carregar notícias: ${error.message}`;
       console.error("Erro na requisição:", error);
     } finally {
       this.carregando = false;
@@ -173,12 +219,30 @@ export default {
   text-align: center;
   color: #f22259;
   margin: 40px 0 20px;
-  white-space: nowrap; /* Impede a quebra de linha por padrão */
-  overflow: hidden; /* Esconde o texto que ultrapassar */
-  text-overflow: ellipsis; /* Adiciona "..." se o texto for muito longo */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   width: 100%;
   padding: 0 20px;
   box-sizing: border-box;
+}
+
+/* Responsividade para celulares */
+@media (max-width: 600px) {
+  .titulo-secao {
+    font-size: 2em;
+    white-space: normal;
+    text-overflow: clip;
+  }
+}
+
+/* Responsividade para celulares */
+@media (max-width: 600px) {
+  .links a {
+    font-size: 0.8em;
+    margin-left: 10px;
+    white-space: normal; /* Permite que o texto quebre em duas linhas */
+  }
 }
 
 .grid-noticias {
@@ -248,7 +312,17 @@ export default {
   justify-content: center;
   align-items: center;
   margin-top: 20px;
-  padding-bottom: 80px; /* Espaço extra para o botão flutuante */
+  padding-bottom: 80px;
+}
+@media (max-width: 1000px) {
+  .grid-noticias {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .grid-noticias {
+    grid-template-columns: 1fr;
+  }
 }
 
 button {
@@ -270,39 +344,5 @@ button:disabled {
   color: red;
   text-align: center;
   margin-top: 20px;
-}
-
-/* Responsividade */
-@media (max-width: 1200px) {
-  .grid-noticias {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .titulo-secao {
-    width: 30%;
-  }
-}
-
-@media (max-width: 900px) {
-  .grid-noticias {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .titulo-secao {
-    width: 50%;
-  }
-}
-
-@media (max-width: 600px) {
-  .grid-noticias {
-    grid-template-columns: 1fr;
-  }
-
-  .titulo-secao {
-    width: 80%;
-    font-size: 2em;
-    white-space: normal; /* Permite a quebra de linha em celulares */
-    text-overflow: clip; /* Remove o "..." em celulares */
-  }
 }
 </style>

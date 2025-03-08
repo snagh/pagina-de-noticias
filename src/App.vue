@@ -2,10 +2,21 @@
   <div id="app">
     <!-- Barra de Menu -->
     <div class="barra-menu">
-      <div class="logo">SNAGH | NEWS</div>
+      <a href="/" class="logo" @click.prevent="recarregarPagina">
+        SNAGH | NEWS
+      </a>
+      <div class="separador"></div>
       <div class="links">
-        <a href="#noticias-brasil">Notícias do Brasil</a>
-        <a href="#noticias-mundo">No Mundo</a>
+        <a
+          href="#noticias-brasil"
+          @click.prevent="rolarParaSecao('noticias-brasil')"
+          >NOTÍCIAS DO BRASIL</a
+        >
+        <a
+          href="#noticias-mundo"
+          @click.prevent="rolarParaSecao('noticias-mundo')"
+          >NO MUNDO</a
+        >
       </div>
     </div>
 
@@ -13,7 +24,9 @@
     <NoticiasPage />
 
     <!-- Botão Flutuante para Voltar ao Topo -->
-    <button class="botao-topo" @click="voltarAoTopo">↑</button>
+    <button v-if="mostrarBotao" class="botao-topo" @click="voltarAoTopo">
+      ↑
+    </button>
   </div>
 </template>
 
@@ -25,6 +38,11 @@ export default {
   components: {
     NoticiasPage,
   },
+  data() {
+    return {
+      mostrarBotao: false,
+    };
+  },
   methods: {
     voltarAoTopo() {
       window.scrollTo({
@@ -32,6 +50,33 @@ export default {
         behavior: "smooth",
       });
     },
+    verificarScroll() {
+      if (window.scrollY > 100) {
+        this.mostrarBotao = true;
+      } else {
+        this.mostrarBotao = false;
+      }
+    },
+    recarregarPagina() {
+      window.location.reload();
+    },
+    rolarParaSecao(id) {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        const offset = 60; // Altura da barra superior
+        const posicao = elemento.offsetTop - offset;
+        window.scrollTo({
+          top: posicao,
+          behavior: "smooth",
+        });
+      }
+    },
+  },
+  mounted() {
+    window.addEventListener("scroll", this.verificarScroll);
+  },
+  beforeUnmount() {
+    window.removeEventListener("scroll", this.verificarScroll);
   },
 };
 </script>
@@ -56,11 +101,11 @@ body {
 /* Estilos da Barra de Menu */
 .barra-menu {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* Alinha os itens à esquerda */
   align-items: center;
   padding: 10px 20px;
   background-color: #595959;
-  border-bottom: 2px solid #f22259;
+  border-bottom: 2px solid #f22259; /* Linha vermelha abaixo da barra */
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -72,6 +117,19 @@ body {
   color: #ffffff;
   font-weight: bold;
   white-space: nowrap;
+  text-decoration: none; /* Remove sublinhado do link */
+  margin-right: 10px; /* Espaço entre o logo e o separador */
+}
+
+.logo:hover {
+  color: #3dc87e; /* Muda a cor ao passar o mouse */
+}
+
+.separador {
+  width: 2px;
+  height: 30px;
+  background-color: #444; /* Cor levemente mais escura */
+  margin-right: 15px; /* Espaço entre o separador e os links */
 }
 
 .links {
@@ -81,7 +139,7 @@ body {
 }
 
 .links a {
-  font-family: Arial, sans-serif;
+  font-family: "Arial Black", sans-serif;
   font-size: 0.9em;
   color: #ffffff;
   text-decoration: none;
@@ -90,7 +148,11 @@ body {
   text-transform: uppercase;
 }
 
-/* Ajustes para telas pequenas */
+.links a:hover {
+  color: #3dc87e; /* Muda a cor ao passar o mouse */
+}
+
+/* Responsividade para celulares */
 @media (max-width: 600px) {
   .logo {
     font-size: 1em;
@@ -99,6 +161,7 @@ body {
   .links a {
     font-size: 0.8em;
     margin-left: 10px;
+    white-space: normal; /* Permite que o texto quebre em duas linhas */
   }
 }
 
