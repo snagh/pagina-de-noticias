@@ -85,6 +85,7 @@
 
 <script>
 import axios from "axios";
+import { eventBus } from "../eventBus"; // Importe o eventBus
 
 export default {
   name: "NoticiasPage",
@@ -97,107 +98,107 @@ export default {
       paginaAtualBrasil: 1,
       paginaAtualMundo: 1,
       noticiasPorPagina: 8,
+      topicoAtual: null,
     };
   },
   computed: {
     noticiasBrasilPaginaAtual() {
-      const inicio = (this.paginaAtualBrasil - 1) * this.noticiasPorPagina;
-      const fim = inicio + this.noticiasPorPagina;
-      return this.noticiasBrasil.slice(inicio, fim);
+      const start = (this.paginaAtualBrasil - 1) * this.noticiasPorPagina;
+      const end = start + this.noticiasPorPagina;
+      return this.noticiasBrasil.slice(start, end);
+    },
+    noticiasMundoPaginaAtual() {
+      const start = (this.paginaAtualMundo - 1) * this.noticiasPorPagina;
+      const end = start + this.noticiasPorPagina;
+      return this.noticiasMundo.slice(start, end);
     },
     totalPaginasBrasil() {
       return Math.ceil(this.noticiasBrasil.length / this.noticiasPorPagina);
-    },
-    noticiasMundoPaginaAtual() {
-      const inicio = (this.paginaAtualMundo - 1) * this.noticiasPorPagina;
-      const fim = inicio + this.noticiasPorPagina;
-      return this.noticiasMundo.slice(inicio, fim);
     },
     totalPaginasMundo() {
       return Math.ceil(this.noticiasMundo.length / this.noticiasPorPagina);
     },
   },
+  created() {
+    this.carregarNoticias();
+    // Escute o evento "filtrar-noticias" usando o eventBus
+    eventBus.on("filtrar-noticias", (topico) => {
+      this.filtrarNoticias(topico);
+    });
+  },
   methods: {
-    paginaAnteriorBrasil() {
-      if (this.paginaAtualBrasil > 1) {
-        this.paginaAtualBrasil--;
-        this.$nextTick(() => {
-          this.rolarParaSecao("noticias-brasil");
-        });
+    async carregarNoticias() {
+      try {
+        const apiKey = process.env.VUE_APP_GUARDIAN_API_KEY;
+        if (!apiKey) {
+          throw new Error(
+            "Chave da API do The Guardian não encontrada. Verifique o arquivo .env."
+          );
+        }
+
+        const urlBrasil = `https://content.guardianapis.com/search?q=brazil&api-key=${apiKey}&show-fields=thumbnail,trailText`;
+        const urlMundo = `https://content.guardianapis.com/search?api-key=${apiKey}&show-fields=thumbnail,trailText`;
+
+        const [responseBrasil, responseMundo] = await Promise.all([
+          axios.get(urlBrasil),
+          axios.get(urlMundo),
+        ]);
+
+        if (responseBrasil.data && responseBrasil.data.response.results) {
+          this.noticiasBrasil = responseBrasil.data.response.results;
+        } else {
+          throw new Error("Resposta da API do Brasil inválida.");
+        }
+
+        if (responseMundo.data && responseMundo.data.response.results) {
+          this.noticiasMundo = responseMundo.data.response.results;
+        } else {
+          throw new Error("Resposta da API do Mundo inválida.");
+        }
+      } catch (error) {
+        this.erro = `Erro ao carregar notícias: ${error.message}`;
+        console.error("Erro na requisição:", error);
+      } finally {
+        this.carregando = false;
       }
+    },
+    filtrarNoticias({ secao, topico }) {
+      this.topicoAtual = topico;
+      this.carregarNoticiasPorTopico(secao, topico);
+    },
+    async carregarNoticiasPorTopico(secao, topico) {
+      try {
+        const apiKey = process.env.VUE_APP_GUARDIAN_API_KEY;
+        const url = `https://content.guardianapis.com/search?q=${
+          secao === "brasil" ? "brazil" : ""
+        }&section=${topico}&api-key=${apiKey}&show-fields=thumbnail,trailText`;
+
+        const response = await axios.get(url);
+
+        if (secao === "brasil") {
+          this.noticiasBrasil = response.data.response.results;
+        } else {
+          this.noticiasMundo = response.data.response.results;
+        }
+      } catch (error) {
+        this.erro = `Erro ao carregar notícias: ${error.message}`;
+        console.error("Erro na requisição:", error);
+      }
+    },
+    paginaAnteriorBrasil() {
+      if (this.paginaAtualBrasil > 1) this.paginaAtualBrasil--;
     },
     proximaPaginaBrasil() {
-      if (this.paginaAtualBrasil < this.totalPaginasBrasil) {
+      if (this.paginaAtualBrasil < this.totalPaginasBrasil)
         this.paginaAtualBrasil++;
-        this.$nextTick(() => {
-          this.rolarParaSecao("noticias-brasil");
-        });
-      }
     },
     paginaAnteriorMundo() {
-      if (this.paginaAtualMundo > 1) {
-        this.paginaAtualMundo--;
-        this.$nextTick(() => {
-          this.rolarParaSecao("noticias-mundo");
-        });
-      }
+      if (this.paginaAtualMundo > 1) this.paginaAtualMundo--;
     },
     proximaPaginaMundo() {
-      if (this.paginaAtualMundo < this.totalPaginasMundo) {
+      if (this.paginaAtualMundo < this.totalPaginasMundo)
         this.paginaAtualMundo++;
-        this.$nextTick(() => {
-          this.rolarParaSecao("noticias-mundo");
-        });
-      }
     },
-    rolarParaSecao(id) {
-      const elemento = document.getElementById(id);
-      if (elemento) {
-        const offset = 60; // Altura da barra superior
-        const posicao = elemento.offsetTop - offset;
-        window.scrollTo({
-          top: posicao,
-          behavior: "smooth",
-        });
-      }
-    },
-  },
-  async created() {
-    try {
-      const apiKey = process.env.VUE_APP_GUARDIAN_API_KEY;
-      if (!apiKey) {
-        throw new Error(
-          "Chave da API do The Guardian não encontrada. Verifique o arquivo .env."
-        );
-      }
-
-      // URL para notícias do Brasil
-      const urlBrasil = `https://content.guardianapis.com/search?q=brazil&api-key=${apiKey}&show-fields=thumbnail,trailText`;
-      // URL para notícias do mundo
-      const urlMundo = `https://content.guardianapis.com/search?api-key=${apiKey}&show-fields=thumbnail,trailText`;
-
-      const [responseBrasil, responseMundo] = await Promise.all([
-        axios.get(urlBrasil),
-        axios.get(urlMundo),
-      ]);
-
-      if (responseBrasil.data && responseBrasil.data.response.results) {
-        this.noticiasBrasil = responseBrasil.data.response.results;
-      } else {
-        throw new Error("Resposta da API do Brasil inválida.");
-      }
-
-      if (responseMundo.data && responseMundo.data.response.results) {
-        this.noticiasMundo = responseMundo.data.response.results;
-      } else {
-        throw new Error("Resposta da API do Mundo inválida.");
-      }
-    } catch (error) {
-      this.erro = `Erro ao carregar notícias: ${error.message}`;
-      console.error("Erro na requisição:", error);
-    } finally {
-      this.carregando = false;
-    }
   },
 };
 </script>
@@ -225,24 +226,6 @@ export default {
   width: 100%;
   padding: 0 20px;
   box-sizing: border-box;
-}
-
-/* Responsividade para celulares */
-@media (max-width: 600px) {
-  .titulo-secao {
-    font-size: 2em;
-    white-space: normal;
-    text-overflow: clip;
-  }
-}
-
-/* Responsividade para celulares */
-@media (max-width: 600px) {
-  .links a {
-    font-size: 0.8em;
-    margin-left: 10px;
-    white-space: normal; /* Permite que o texto quebre em duas linhas */
-  }
 }
 
 .grid-noticias {
@@ -314,18 +297,8 @@ export default {
   margin-top: 20px;
   padding-bottom: 80px;
 }
-@media (max-width: 1000px) {
-  .grid-noticias {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .grid-noticias {
-    grid-template-columns: 1fr;
-  }
-}
 
-button {
+.paginacao button {
   background-color: #3dc87e;
   color: white;
   border: none;
@@ -335,7 +308,7 @@ button {
   margin: 0 10px;
 }
 
-button:disabled {
+.paginacao button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
@@ -344,5 +317,17 @@ button:disabled {
   color: red;
   text-align: center;
   margin-top: 20px;
+}
+
+@media (max-width: 1000px) {
+  .grid-noticias {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .grid-noticias {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

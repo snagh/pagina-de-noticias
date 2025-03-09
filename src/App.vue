@@ -7,17 +7,25 @@
       </a>
       <div class="separador"></div>
       <div class="links">
-        <a
-          href="#noticias-brasil"
-          @click.prevent="rolarParaSecao('noticias-brasil')"
+        <a href="#noticias-brasil" @click.prevent="mostrarSubBarra('brasil')"
           >NOTÍCIAS DO BRASIL</a
         >
-        <a
-          href="#noticias-mundo"
-          @click.prevent="rolarParaSecao('noticias-mundo')"
+        <a href="#noticias-mundo" @click.prevent="mostrarSubBarra('mundo')"
           >NO MUNDO</a
         >
       </div>
+    </div>
+
+    <!-- Sub-Barra de Tópicos -->
+    <div v-if="subBarraVisivel" class="sub-barra">
+      <a
+        v-for="topico in topicos"
+        :key="topico.id"
+        href="#"
+        @click.prevent="filtrarPorTopico(topico.id)"
+      >
+        {{ topico.nome }}
+      </a>
     </div>
 
     <!-- Conteúdo Principal -->
@@ -32,6 +40,7 @@
 
 <script>
 import NoticiasPage from "./components/NoticiasPage.vue";
+import { eventBus } from "./eventBus"; // Importe o eventBus
 
 export default {
   name: "App",
@@ -41,6 +50,14 @@ export default {
   data() {
     return {
       mostrarBotao: false,
+      subBarraVisivel: false,
+      secaoAtual: null,
+      topicos: [
+        { id: "sport", nome: "Esportes" },
+        { id: "education", nome: "Educação" },
+        { id: "business", nome: "Economia" },
+        { id: "environment", nome: "Ambiente" },
+      ],
     };
   },
   methods: {
@@ -60,16 +77,17 @@ export default {
     recarregarPagina() {
       window.location.reload();
     },
-    rolarParaSecao(id) {
-      const elemento = document.getElementById(id);
-      if (elemento) {
-        const offset = 60; // Altura da barra superior
-        const posicao = elemento.offsetTop - offset;
-        window.scrollTo({
-          top: posicao,
-          behavior: "smooth",
-        });
-      }
+    mostrarSubBarra(secao) {
+      this.subBarraVisivel = true;
+      this.secaoAtual = secao;
+    },
+    filtrarPorTopico(topico) {
+      // Emite o evento usando o eventBus
+      eventBus.emit("filtrar-noticias", {
+        secao: this.secaoAtual,
+        topico: topico,
+      });
+      this.subBarraVisivel = false;
     },
   },
   mounted() {
@@ -101,11 +119,11 @@ body {
 /* Estilos da Barra de Menu */
 .barra-menu {
   display: flex;
-  justify-content: flex-start; /* Alinha os itens à esquerda */
+  justify-content: flex-start;
   align-items: center;
   padding: 10px 20px;
   background-color: #595959;
-  border-bottom: 2px solid #f22259; /* Linha vermelha abaixo da barra */
+  border-bottom: 2px solid #f22259;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -117,19 +135,19 @@ body {
   color: #ffffff;
   font-weight: bold;
   white-space: nowrap;
-  text-decoration: none; /* Remove sublinhado do link */
-  margin-right: 10px; /* Espaço entre o logo e o separador */
+  text-decoration: none;
+  margin-right: 10px;
 }
 
 .logo:hover {
-  color: #3dc87e; /* Muda a cor ao passar o mouse */
+  color: #3dc87e;
 }
 
 .separador {
   width: 2px;
   height: 30px;
-  background-color: #444; /* Cor levemente mais escura */
-  margin-right: 15px; /* Espaço entre o separador e os links */
+  background-color: #444;
+  margin-right: 15px;
 }
 
 .links {
@@ -149,7 +167,7 @@ body {
 }
 
 .links a:hover {
-  color: #3dc87e; /* Muda a cor ao passar o mouse */
+  color: #3dc87e;
 }
 
 /* Responsividade para celulares */
@@ -161,7 +179,7 @@ body {
   .links a {
     font-size: 0.8em;
     margin-left: 10px;
-    white-space: normal; /* Permite que o texto quebre em duas linhas */
+    white-space: normal;
   }
 }
 
@@ -185,5 +203,28 @@ body {
 .botao-topo:hover {
   background-color: #3dc87e;
   transform: scale(1.1);
+}
+
+.sub-barra {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background-color: #444;
+  border-bottom: 2px solid #f22259;
+}
+
+.sub-barra a {
+  font-family: "Arial Black", sans-serif;
+  font-size: 0.9em;
+  color: #ffffff;
+  text-decoration: none;
+  margin: 0 10px;
+  transition: color 0.3s ease;
+  text-transform: uppercase;
+}
+
+.sub-barra a:hover {
+  color: #3dc87e;
 }
 </style>
